@@ -3,60 +3,48 @@ name: Build SnapMatch (Windows + macOS)
 on:
   release:
     types: [published]
-
-  # Also allow manual runs from the Actions tab
   workflow_dispatch:
 
 permissions:
-  contents: write  # needed to upload assets to the Release
+  contents: write
 
 jobs:
   build:
-    name: Build on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
-
-    defaults:
-      run:
-        shell: bash
-        working-directory: snapmatch
+    runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install pyinstaller
-
-      - name: Build binary (PyInstaller)
+      - name: Install deps
+        working-directory: snapmatch
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller pillow opencv-python numpy pandas openpyxl
-          pyinstaller --clean --noconfirm --onefile --name snapmatch snapmatch/src/snapmatch/cli.py
 
+      - name: Build binary (PyInstaller)
+        working-directory: snapmatch
+        run: |
+          pyinstaller --clean --noconfirm --onefile --name snapmatch src/snapmatch/cli.py
 
-      - name: Prepare artifact name (Windows)
+      - name: Rename (Windows)
         if: runner.os == 'Windows'
-        run: |
-          mv dist/snapmatch.exe dist/snapmatch-windows.exe
+        working-directory: snapmatch
+        run: mv dist/snapmatch.exe dist/snapmatch-windows.exe
 
-      - name: Prepare artifact name (macOS)
+      - name: Rename (macOS)
         if: runner.os == 'macOS'
-        run: |
-          mv dist/snapmatch dist/snapmatch-macos
+        working-directory: snapmatch
+        run: mv dist/snapmatch dist/snapmatch-macos
 
-      - name: Upload to GitHub Release
+      - name: Upload to Release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
