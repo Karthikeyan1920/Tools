@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "snapmatch"
+version = "0.1.0"
+description = "Match edited images to their closest raw originals using perceptual dHash, then copy the matched originals to an output folder."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Your Name"}]
+keywords = ["image", "dhash", "perceptual-hash", "matching", "forensics", "asset-management"]
+dependencies = [
+  "Pillow>=10.0.0",
+  "tqdm>=4.60.0",
+]
+
+[project.optional-dependencies]
+report = ["openpyxl>=3.1.0"]
+
+[project.scripts]
+snapmatch = "snapmatch.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
