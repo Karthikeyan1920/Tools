@@ -1,0 +1,64 @@
+name: Build SnapMatch (Windows + macOS)
+
+on:
+  release:
+    types: [published]
+
+  # Also allow manual runs from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: write  # needed to upload assets to the Release
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: snapmatch
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pyinstaller
+
+      - name: Build binary (PyInstaller)
+        run: |
+          pyinstaller --clean --noconfirm --onefile \
+            --name snapmatch \
+            -m snapmatch.cli
+
+      - name: Prepare artifact name (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mv dist/snapmatch.exe dist/snapmatch-windows.exe
+
+      - name: Prepare artifact name (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mv dist/snapmatch dist/snapmatch-macos
+
+      - name: Upload to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            snapmatch/dist/snapmatch-windows.exe
+            snapmatch/dist/snapmatch-macos
